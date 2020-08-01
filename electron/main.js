@@ -2,6 +2,8 @@ const {app, BrowserWindow} = require('electron');
 const isDev = require('electron-is-dev');
 const path = require('path');
 
+const server = require('../server/server');
+
 let mainWindow;
 
 const createWindow = () => {
@@ -17,7 +19,10 @@ const createWindow = () => {
     mainWindow.once('ready-to-show', () => mainWindow.show());
     mainWindow.on('closed', () => {
         mainWindow = null;
+        server.close();
     });
 };
 
-app.on('ready', createWindow);
+
+server.open(() => app.on('ready', createWindow));
+
