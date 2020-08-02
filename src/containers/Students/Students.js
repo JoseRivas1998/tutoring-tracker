@@ -1,18 +1,57 @@
 import React, {Component} from 'react';
-import {Col, Table} from 'react-bootstrap';
+import {Row, Col, Form, Table, InputGroup, Button} from 'react-bootstrap';
 import axios from 'axios';
 import moment from 'moment';
+import {Helmet} from 'react-helmet';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faDollarSign} from '@fortawesome/free-solid-svg-icons';
 
-const DATE_FORMAT = "YYYY-MM-DD hh:mm:ss a";
+import {DATE_FORMAT} from '../../utils/dateutils';
+import * as inputTypes from '../../utils/inputTypes';
+import * as filters from '../../utils/filters';
+import * as forms from '../../utils/forms';
+import * as validators from '../../utils/validators';
+
+const buildNewForm = () => ({
+    name: {
+        label: "Name",
+        type: inputTypes.TEXT,
+        value: "",
+        touched: false,
+        valid: false,
+        validator: validators.requiredText
+    },
+    subject: {
+        label: "Subject",
+        type: inputTypes.TEXT,
+        value: "",
+        touched: false,
+        valid: false,
+        validator: validators.requiredText
+    },
+    hourly_rate: {
+        label: "Hourly Rate",
+        type: inputTypes.NUMBER,
+        value: 0,
+        touched: false,
+        valid: false,
+        validator: validators.combineAnd(validators.requiredNumber, validators.minValue(0)),
+        filter: filters.filterNumber
+    }
+});
 
 class Students extends Component {
 
     state = {
-        students: []
+        students: [],
+        newStudent: {
+            ...buildNewForm()
+        },
+        formValid: false
     };
 
     componentDidMount() {
-        this.loadStudents();
+        this.loadStudents().then(r => console.log(`${this.state.students.length} students loaded.`));
     }
 
     loadStudents = async () => {
@@ -24,6 +63,27 @@ class Students extends Component {
             updatedAt: moment(student.updatedAt).format(DATE_FORMAT)
         }));
         this.setState({students: students});
+    };
+
+    onFormInputUpdate = (event, key) => {
+        const updatedState = forms.updateForm(event, key, this.state.newStudent);
+        this.setState({newStudent: updatedState.form, formValid: updatedState.formValid});
+    };
+
+    onFormSubmit = event => {
+        event.preventDefault();
+        if (!this.state.formValid) return;
+        const submitForm = async () => {
+            const formData = {
+                name: this.state.newStudent.name.value,
+                subject: this.state.newStudent.subject.value,
+                hourly_rate: this.state.newStudent.hourly_rate.value
+            };
+            const response = await axios.post('http://localhost:3001/students/', formData);
+            this.setState({newStudent: {...buildNewForm()}, formValid: false});
+            console.log(response);
+        }
+        submitForm().then(() => this.loadStudents());
     };
 
     render() {
@@ -43,7 +103,6 @@ class Students extends Component {
                 );
             };
             const buildBody = () => {
-                console.log(this.state.students);
                 const students = this.state.students.map(student => (
                     <tr key={student.id}>
                         <td>{student.id}</td>
@@ -67,10 +126,74 @@ class Students extends Component {
                 </Table>
             );
         };
+        const buildNewStudentForm = () => {
+            return (
+                <Form onSubmit={this.onFormSubmit}>
+                    <Row>
+                        <Col>
+                            <Form.Group>
+                                <Form.Label>{this.state.newStudent.name.label}</Form.Label>
+                                <Form.Control
+                                    value={this.state.newStudent.name.value}
+                                    placeholder={this.state.newStudent.name.label}
+                                    isValid={this.state.newStudent.name.valid}
+                                    isInvalid={this.state.newStudent.name.touched && !this.state.newStudent.name.valid}
+                                    onChange={event => this.onFormInputUpdate(event, "name")}/>
+                            </Form.Group>
+                        </Col>
+                        <Col>
+                            <Form.Group>
+                                <Form.Label>{this.state.newStudent.subject.label}</Form.Label>
+                                <Form.Control
+                                    value={this.state.newStudent.subject.value}
+                                    placeholder={this.state.newStudent.subject.label}
+                                    isValid={this.state.newStudent.subject.valid}
+                                    isInvalid={this.state.newStudent.subject.touched && !this.state.newStudent.subject.valid}
+                                    onChange={event => this.onFormInputUpdate(event, "subject")}/>
+                            </Form.Group>
+                        </Col>
+                        <Col>
+                            <Form.Group>
+                                <Form.Label>{this.state.newStudent.hourly_rate.label}</Form.Label>
+                                <InputGroup>
+                                    <InputGroup.Prepend>
+                                        <InputGroup.Text><FontAwesomeIcon icon={faDollarSign}/></InputGroup.Text>
+                                    </InputGroup.Prepend>
+                                    <Form.Control
+                                        value={this.state.newStudent.hourly_rate.value}
+                                        type={"number"}
+                                        placeholder={this.state.newStudent.hourly_rate.label}
+                                        isValid={this.state.newStudent.hourly_rate.valid}
+                                        isInvalid={this.state.newStudent.hourly_rate.touched && !this.state.newStudent.hourly_rate.valid}
+                                        onChange={event => this.onFormInputUpdate(event, "hourly_rate")}/>
+                                    <InputGroup.Append>
+                                        <InputGroup.Text>/hr</InputGroup.Text>
+                                    </InputGroup.Append>
+                                </InputGroup>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button
+                                variant={"primary"}
+                                type={"submit"}
+                                disabled={!this.state.formValid}>Add Student</Button>
+                        </Col>
+                    </Row>
+                </Form>
+            );
+        };
         return (
             <Col>
+                <Helmet>
+                    <title>Students</title>
+                </Helmet>
                 <h1>Students</h1>
                 {buildStudentsTable()}
+                <hr/>
+                <h2>New Student</h2>
+                {buildNewStudentForm()}
             </Col>
         );
     }

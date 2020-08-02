@@ -9,6 +9,7 @@ const open = onListen => {
     const port = 3001;
 
     app.use(cors());
+    app.use(express.json());
 
     app.get('/', (req, res) => res.send('Hello World!'));
 
@@ -17,12 +18,22 @@ const open = onListen => {
         res.send(students);
     });
 
+    app.post('/students/', async (req, res) => {
+        try {
+             await core.addStudent(req.body.name, req.body.subject, req.body.hourly_rate);
+             res.status(204).send({});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send(err);
+        }
+    });
+
     server = app.listen(port, () => {
         console.log(`Express server running on http://localhost:${port}`);
         onListen();
     });
 };
-const close =()=> {
+const close = () => {
     if (server) {
         server.close();
         server = null;
