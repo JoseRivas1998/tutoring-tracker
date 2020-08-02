@@ -1,0 +1,13 @@
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    color: black;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.nav-link {
+    color: #777;
+}
+
+.nav-link:hover {
+    color: black;
+    background-color: rgba(0, 0, 0, 0.15);
+}
