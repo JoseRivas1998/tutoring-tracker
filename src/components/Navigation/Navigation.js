@@ -1,6 +1,6 @@
 import React from 'react';
 import {Col, Container, Nav, Row} from 'react-bootstrap';
-import {faBusinessTime, faDollarSign, faUsers} from '@fortawesome/free-solid-svg-icons';
+import {faBusinessTime, faDollarSign, faUsers, faFileInvoiceDollar} from '@fortawesome/free-solid-svg-icons';
 
 import NavItem from './NavItem/NavItem';
 import classes from './Navigation.module.css';
@@ -17,6 +17,10 @@ const navLinks = [
     {
         path: "/requests",
         icon: faDollarSign
+    },
+    {
+        path: "/report",
+        icon: faFileInvoiceDollar
     }
 ];
 

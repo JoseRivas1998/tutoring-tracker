@@ -28,6 +28,40 @@ const open = onListen => {
         }
     });
 
+    app.get('/sessions/', async (req, res) => {
+        if (!req.query || !('requested' in req.query)) {
+            res.status(400).send({message: 'Required query parameter \'requested\' (bool) missing'});
+            return;
+        }
+        const sessions = await core.loadSessions(req.query.requested === 'true');
+        res.send(sessions);
+    });
+
+    app.post('/sessions/', async (req, res) => {
+        if (!req.body) {
+            res.status(400).send({message: 'No Body Provided'});
+            return;
+        }
+        if (!req.body.date) {
+            res.status(400).send({message: 'Missing parameter \'date\' (date_string).'})
+            return;
+        }
+        if (!('duration' in req.body)) {
+            res.status(400).send({message: 'Missing parameter \'duration\' (float).'})
+            return;
+        }
+        if (!req.body.StudentId) {
+            res.status(400).send({message: 'Missing parameter \'StudentId\' (int).'})
+            return;
+        }
+        try {
+            await core.addSession(req.body.date, req.body.duration, req.body.StudentId);
+            res.status(204).send({});
+        } catch (err) {
+            res.status(400).send(err);
+        }
+    });
+
     server = app.listen(port, () => {
         console.log(`Express server running on http://localhost:${port}`);
         onListen();
@@ -37,6 +71,7 @@ const close = () => {
     if (server) {
         server.close();
         server = null;
+        require('./data/database').closeDb();
     }
 };
 

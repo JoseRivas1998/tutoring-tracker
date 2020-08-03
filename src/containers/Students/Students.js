@@ -120,7 +120,7 @@ class Students extends Component {
                 );
             };
             return (
-                <Table responsive striped hover bordered>
+                <Table responsive striped hover>
                     {buildHeader()}
                     {buildBody()}
                 </Table>
@@ -190,10 +190,10 @@ class Students extends Component {
                     <title>Students</title>
                 </Helmet>
                 <h1>Students</h1>
-                {buildStudentsTable()}
-                <hr/>
                 <h2>New Student</h2>
                 {buildNewStudentForm()}
+                <hr/>
+                {buildStudentsTable()}
             </Col>
         );
     }

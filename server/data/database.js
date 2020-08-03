@@ -10,21 +10,22 @@ const createDatabaseFolder = () => {
     if (!fs.existsSync(appDataFolder())) fs.mkdirSync(appDataFolder());
 };
 
-const openDb = async () => {
+let db;
+
+const createDb = async () => {
     createDatabaseFolder();
 
     const db = new Sequelize({
         dialect: "sqlite",
-        storage: databaseFile(),
-        logging: false
+        storage: databaseFile()
     });
 
     const Student = require('./module/student')(db);
     const Session = require('./module/session')(db);
     Session.belongsTo(Student);
 
-    await Student.sync({alter: true});
-    await Session.sync({alter: true});
+    await Student.sync();
+    await Session.sync();
 
     return {
         db: db,
@@ -33,6 +34,18 @@ const openDb = async () => {
     };
 };
 
+const openDb = async () => {
+    if (!db) db = await createDb();
+    return db;
+};
+
+const closeDb = () => {
+    if (db) {
+        db.db.close();
+        db = null;
+    }
+};
+
 module.exports = {
-    openDb: openDb
+    openDb, closeDb
 };
