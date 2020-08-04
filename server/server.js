@@ -20,8 +20,8 @@ const open = onListen => {
 
     app.post('/students/', async (req, res) => {
         try {
-             await core.addStudent(req.body.name, req.body.subject, req.body.hourly_rate);
-             res.status(204).send({});
+            await core.addStudent(req.body.name, req.body.subject, req.body.hourly_rate);
+            res.status(204).send({});
         } catch (err) {
             console.error(err);
             res.status(400).send(err);
@@ -30,7 +30,7 @@ const open = onListen => {
 
     app.get('/sessions/', async (req, res) => {
         if (!req.query || !('requested' in req.query)) {
-            res.status(400).send({message: 'Required query parameter \'requested\' (bool) missing'});
+            res.status(400).send({message: 'Required query parameter \'requested\' (bool) missing.'});
             return;
         }
         const sessions = await core.loadSessions(req.query.requested === 'true');
@@ -57,6 +57,19 @@ const open = onListen => {
         try {
             await core.addSession(req.body.date, req.body.duration, req.body.StudentId);
             res.status(204).send({});
+        } catch (err) {
+            res.status(400).send(err);
+        }
+    });
+
+    app.get('/requests/', async (req, res) => {
+        try {
+            if (!req.query || !('paid' in req.query)) {
+                res.status(400).send({message: 'Requred query parameter \'paid\' (bool) missing.'});
+                return;
+            }
+            const requests = await core.loadRequests(req.query.paid === 'true');
+            res.send(requests);
         } catch (err) {
             res.status(400).send(err);
         }

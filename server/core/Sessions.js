@@ -23,7 +23,20 @@ const addSession = async (date, duration, StudentId) => {
     });
 };
 
+const loadRequests = async (paid) => {
+    const db = await openDb();
+    return await db.Session.findAll({
+        where: {
+            payment_requested: true,
+            payment_paid: paid
+        },
+        order: ['date'],
+        include: [db.Student]
+    });
+};
+
 module.exports = {
     loadSessions,
-    addSession
+    addSession,
+    loadRequests
 };

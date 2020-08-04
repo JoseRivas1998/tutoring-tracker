@@ -5,6 +5,7 @@ import {Switch, Route} from 'react-router';
 
 import Students from '../Students/Students';
 import Sessions from '../Sessions/Sessions';
+import Report from '../Report/Report';
 import classes from './App.module.css';
 
 
@@ -17,6 +18,7 @@ function App() {
                         <Switch>
                             <Route path={"/"} exact component={Students}/>
                             <Route path={"/sessions"} component={Sessions}/>
+                            <Route path={"/report"} component={Report}/>
                         </Switch>
                     </Row>
                 </Container>
