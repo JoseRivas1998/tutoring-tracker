@@ -7,6 +7,7 @@ import moment from 'moment';
 import InputElement from '../../components/InputElement/InputElement';
 import * as inputTypes from '../../utils/inputTypes';
 import * as forms from '../../utils/forms';
+import * as dateRanges from './dateRanges';
 import {DATE_FORMAT} from '../../utils/dateutils';
 
 class Report extends Component {
@@ -22,6 +23,21 @@ class Report extends Component {
                 label: 'End Date',
                 type: inputTypes.DATE,
                 value: moment().endOf('month').startOf('day')
+            }
+        },
+        rangeSelectForm: {
+            rangeSelect: {
+                label: "Preset Range",
+                type: inputTypes.SELECT,
+                value: dateRanges.THIS_MONTH,
+                options: [
+                    {value: dateRanges.THIS_MONTH},
+                    {value: dateRanges.LAST_MONTH},
+                    {value: dateRanges.MONTH_TO_DATE},
+                    {value: dateRanges.THIS_YEAR},
+                    {value: dateRanges.LAST_YEAR},
+                    {value: dateRanges.YEAR_TO_DATE}
+                ]
             }
         },
         paid: []
@@ -57,8 +73,67 @@ class Report extends Component {
         this.setState({rangeForm: forms.updateForm(event, key, this.state.rangeForm).form}, () => this.loadData());
     };
 
+    onRangeSelect = event => {
+        let startDate;
+        let endDate;
+        switch (event.target.value) {
+            case dateRanges.LAST_MONTH:
+                startDate = moment().subtract(1, 'month').startOf('month');
+                endDate = moment().subtract(1, 'month').endOf('month').startOf('day');
+                break;
+            case dateRanges.MONTH_TO_DATE:
+                startDate = moment().startOf('month');
+                endDate = moment().startOf('day');
+                break;
+            case dateRanges.THIS_YEAR:
+                startDate = moment().startOf('year');
+                endDate = moment().endOf('year').startOf('day');
+                break;
+            case dateRanges.LAST_YEAR:
+                startDate = moment().subtract(1, 'year').startOf('year');
+                endDate = moment().subtract(1, 'year').endOf('year').startOf('day');
+                break;
+            case dateRanges.YEAR_TO_DATE:
+                startDate = moment().startOf('year');
+                endDate = moment().startOf('day');
+                break;
+            case dateRanges.THIS_MONTH:
+            default:
+                startDate = moment().startOf('month');
+                endDate = moment().endOf('month').startOf('day');
+                break;
+        }
+        const updatedRangeForm = {...this.state.rangeForm};
+        const updatedStartDate = {
+            ...updatedRangeForm.startDate,
+            value: startDate
+        };
+        const updatedEndDate = {
+            ...updatedRangeForm.endDate,
+            value: endDate
+        };
+        updatedRangeForm.startDate = updatedStartDate;
+        updatedRangeForm.endDate = updatedEndDate;
+        const updatedSelect = forms.updateForm(event, 'rangeSelect', this.state.rangeSelectForm).form;
+        this.setState({rangeForm: updatedRangeForm, rangeSelectForm: updatedSelect}, () => this.loadData());
+    };
+
     render() {
         const buildRangeForm = () => {
+            const rangeSelectElement = () => {
+                return (
+                    <Col>
+                        <InputElement
+                            label={this.state.rangeSelectForm.rangeSelect.label}
+                            type={this.state.rangeSelectForm.rangeSelect.type}
+                            value={this.state.rangeSelectForm.rangeSelect.value}
+                            touched={true}
+                            valid={true}
+                            options={this.state.rangeSelectForm.rangeSelect.options}
+                            onChange={this.onRangeSelect}/>
+                    </Col>
+                );
+            };
             const buildFormElements = () => {
                 const buildFormElement = element => {
                     return (
@@ -81,6 +156,7 @@ class Report extends Component {
             };
             return (
                 <Row>
+                    {rangeSelectElement()}
                     {buildFormElements()}
                 </Row>
             );
