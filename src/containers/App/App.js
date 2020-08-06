@@ -1,7 +1,7 @@
 import React from 'react';
 import Layout from '../../hoc/layout/Layout';
 import {Container, Row} from 'react-bootstrap';
-import {Switch, Route} from 'react-router';
+import {Switch, Route, Redirect} from 'react-router';
 
 import Students from '../Students/Students';
 import Sessions from '../Sessions/Sessions';
@@ -19,6 +19,7 @@ function App() {
                             <Route path={"/"} exact component={Students}/>
                             <Route path={"/sessions"} component={Sessions}/>
                             <Route path={"/report"} component={Report}/>
+                            <Redirect to={"/"}/>
                         </Switch>
                     </Row>
                 </Container>

@@ -35,7 +35,10 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\""
+    "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "build-electron": "npm run build && xcopy electron build\\electron\\ /E/H && xcopy server build\\server\\ /E/H",
+    "package": "electron-builder build --win -c.extraMetadata.main=build/electron/main.js --publish never",
+    "electron-dist": "npm run build-electron && npm run package"
   },
   "homepage": "./",
   "main": "./electron/main.js",
@@ -58,5 +61,12 @@
     "electron": "^9.1.2",
     "electron-builder": "^22.8.0",
     "wait-on": "^5.1.0"
+  },
+  "build": {
+    "publish": {
+      "provider": "github",
+      "repo": "tutoring-tracker",
+      "owner": "joserivas1998"
+    }
   }
 }
