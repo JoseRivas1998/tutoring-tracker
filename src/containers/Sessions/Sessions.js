@@ -4,7 +4,7 @@ import {Helmet} from 'react-helmet';
 import axios from 'axios';
 import moment from 'moment';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faCheck, faTimes} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faTimes, faTrash} from '@fortawesome/free-solid-svg-icons';
 
 import Spinner from '../../components/Spinner/Spinner';
 import {DATE_FORMAT} from '../../utils/dateutils';
@@ -50,6 +50,21 @@ const createLogSessionForm = (students) => {
     }
 };
 
+const createBulkForm = students => {
+    const defaultStudentId = students.length > 0 ? students[0].id : -1;
+    return {
+        student: {
+            label: "Student",
+            type: inputTypes.SELECT,
+            value: defaultStudentId,
+            touched: true,
+            valid: true,
+            filter: filters.filterNumber,
+            options: students.map(student => ({name: student.name, value: student.id}))
+        },
+    }
+};
+
 class Sessions extends Component {
 
     state = {
@@ -59,6 +74,9 @@ class Sessions extends Component {
         students: [],
         logSessionForm: {
             ...createLogSessionForm([])
+        },
+        bulkForm: {
+            ...createBulkForm([])
         },
         logSessionFormValid: false,
         logSessionFormError: null,
@@ -78,7 +96,8 @@ class Sessions extends Component {
             unrequested: unrequested.data,
             requested: requested.data,
             students: students,
-            logSessionForm: {...createLogSessionForm(students)}
+            logSessionForm: {...createLogSessionForm(students)},
+            bulkForm: {...createBulkForm(students)}
         })
     };
 
@@ -119,6 +138,33 @@ class Sessions extends Component {
         this.loadData();
     };
 
+    deleteSession = async id => {
+        await axios.delete(`http://localhost:3001/sessions/${id}`);
+        await this.loadData();
+    };
+
+    requestSession = async id => {
+        await axios.post(`http://localhost:3001/requests/make-request/${id}`);
+        await this.loadData();
+    };
+
+    onBulkSelectChange = async event => {
+        const form = forms.updateForm(event, 'student', this.state.bulkForm).form;
+        this.setState({
+            bulkForm: form
+        });
+    };
+
+    requestBulk = async () => {
+        await axios.post(`http://localhost:3001/requests/request-bulk/${this.state.bulkForm.student.value}`);
+        await this.loadData();
+    };
+
+    markPaid = async id => {
+        await axios.post(`http://localhost:3001/requests/mark-paid/${id}`);
+        await this.loadData();
+    };
+
     render() {
         if (this.state.loading) {
             return (
@@ -142,6 +188,7 @@ class Sessions extends Component {
                         <th>Student Name</th>
                         <th>Student Subject</th>
                         <th>Amount Owed</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                 );
@@ -149,6 +196,47 @@ class Sessions extends Component {
             const buildBody = () => {
                 const buildRows = () => {
                     const buildRow = session => {
+                        const buildButtons = () => {
+                            const markRequestedButton = () => {
+                                return (
+                                    <Button
+                                        type={"button"}
+                                        className={"mr-2"}
+                                        variant={"warning"}
+                                        onClick={() => this.requestSession(session.id)}>
+                                        Request Pay
+                                    </Button>
+                                );
+                            };
+                            const markPaid = () => {
+                                if (session.payment_paid) return null;
+                                return (
+                                    <Button
+                                        type={"button"}
+                                        className={"mr-2"}
+                                        variant={"success"}
+                                        onClick={() => this.markPaid(session.id)}>
+                                        Mark Paid
+                                    </Button>
+                                )
+                            };
+                            const deleteButton = () => {
+                                return (
+                                    <Button
+                                        type={"button"}
+                                        variant={"danger"}
+                                        onClick={() => this.deleteSession(session.id)}>
+                                        <FontAwesomeIcon icon={faTrash}/>
+                                    </Button>
+                                );
+                            };
+                            return (
+                                <td>
+                                    {session.payment_requested ? markPaid() : markRequestedButton()}
+                                    {deleteButton()}
+                                </td>
+                            );
+                        };
                         const amountOwed = session.duration * session.Student.hourly_rate;
                         return (
                             <tr key={session.id}>
@@ -163,6 +251,7 @@ class Sessions extends Component {
                                 <td>{session.Student.name}</td>
                                 <td>{session.Student.subject}</td>
                                 <td>${amountOwed.toFixed(2)}</td>
+                                {buildButtons()}
                             </tr>
                         );
                     };
@@ -227,6 +316,87 @@ class Sessions extends Component {
                 </Alert>
             );
         };
+        const buildBulkRequestForm = () => {
+            const buildStudentSelect = () => {
+                return (
+                    <InputElement
+                        label={this.state.bulkForm.student.label}
+                        type={this.state.bulkForm.student.type}
+                        value={this.state.bulkForm.student.value}
+                        touched={true}
+                        valid={true}
+                        options={this.state.bulkForm.student.options}
+                        onChange={this.onBulkSelectChange}/>
+                );
+            };
+            const buildBulkTable = () => {
+                const buildHeading = () => {
+                    return (
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount Owed</th>
+                        </tr>
+                        </thead>
+                    );
+                };
+                const buildBody = () => {
+                    const buildRows = sessions => {
+                        const buildRow = session => {
+                            const cost = session.duration * session.Student.hourly_rate;
+                            return (
+                                <tr key={session.id}>
+                                    <td>{moment(session.date).format('MM/DD')}</td>
+                                    <td>${cost.toFixed(2)}</td>
+                                </tr>
+                            );
+                        };
+                        return sessions.map(buildRow);
+                    };
+                    const buildTotalRow = sessions => {
+                        const total = sessions.length === 0 ? 0 : sessions
+                            .map(session => session.duration * session.Student.hourly_rate)
+                            .reduce((total, currentValue) => total + currentValue);
+                        return (
+                            <tr>
+                                <td className={"text-right"}><strong>Total</strong></td>
+                                <td>${total.toFixed(2)}</td>
+                            </tr>
+                        );
+                    };
+                    const sessions = this.state.unrequested.filter(session => session.StudentId === this.state.bulkForm.student.value);
+                    return (
+                        <tbody>
+                        {buildRows(sessions)}
+                        {buildTotalRow(sessions)}
+                        </tbody>
+                    );
+                };
+                return (
+                    <Table responsive hover striped>
+                        {buildHeading()}
+                        {buildBody()}
+                    </Table>
+                );
+            };
+            const buildBtn = () => {
+                return (
+                    <Button
+                        type={"button"}
+                        variant={"primary"}
+                        onClick={this.requestBulk}>
+                        Request All
+                    </Button>
+                )
+            };
+            return (
+                <>
+                    {buildStudentSelect()}
+                    {buildBulkTable()}
+                    {buildBtn()}
+                </>
+            );
+        };
         return (
             <Col>
                 <Helmet>
@@ -238,6 +408,8 @@ class Sessions extends Component {
                 {buildLogSessionFormError()}
                 <h2>Sessions with no Payment Request</h2>
                 {buildSessionTable(this.state.unrequested)}
+                <h2>Request Sessions Bulk</h2>
+                {buildBulkRequestForm()}
                 <h2>Sessions with Payment Request</h2>
                 {buildSessionTable(this.state.requested)}
             </Col>

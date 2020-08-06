@@ -62,6 +62,16 @@ const open = onListen => {
         }
     });
 
+    app.delete('/sessions/:id', async (req, res) => {
+        try {
+            await core.deleteSession(Number(req.params.id));
+            res.status(204).send({});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send(err);
+        }
+    });
+
     app.get('/requests/', async (req, res) => {
         try {
             if (!req.query || !('paid' in req.query)) {
@@ -71,6 +81,36 @@ const open = onListen => {
             const requests = await core.loadRequests(req.query.paid === 'true');
             res.send(requests);
         } catch (err) {
+            res.status(400).send(err);
+        }
+    });
+
+    app.post('/requests/make-request/:id', async (req, res) => {
+        try {
+            await core.requestSession(Number(req.params.id));
+            res.status(204).send({});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send(err);
+        }
+    });
+
+    app.post('/requests/request-bulk/:student', async (req, res) => {
+        try {
+            await core.requestBulk(Number(req.params.student));
+            res.status(204).send({});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send(err);
+        }
+    });
+
+    app.post('/requests/mark-paid/:id', async (req, res) => {
+        try {
+            await core.markPaid(Number(req.params.id));
+            res.status(204).send({});
+        } catch (err) {
+            console.error(err);
             res.status(400).send(err);
         }
     });
