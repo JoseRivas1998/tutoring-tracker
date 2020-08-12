@@ -4,8 +4,9 @@ import axios from 'axios';
 import moment from 'moment';
 import {Helmet} from 'react-helmet';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faDollarSign} from '@fortawesome/free-solid-svg-icons';
+import {faDollarSign, faEdit, faWindowClose, faSave} from '@fortawesome/free-solid-svg-icons';
 
+import InputElement from '../../components/InputElement/InputElement';
 import {DATE_FORMAT} from '../../utils/dateutils';
 import * as inputTypes from '../../utils/inputTypes';
 import * as filters from '../../utils/filters';
@@ -47,6 +48,7 @@ class Students extends Component {
         newStudent: {
             ...buildNewForm()
         },
+        updateStudentForm: {},
         formValid: false
     };
 
@@ -86,6 +88,57 @@ class Students extends Component {
         submitForm().then(() => this.loadStudents());
     };
 
+    addUpdateStudentForm = student => {
+        const newUpdateStudentForm = {
+            ...this.state.updateStudentForm
+        };
+        newUpdateStudentForm[student.id] = {
+            name: {
+                label: "Name",
+                type: inputTypes.TEXT,
+                value: student.name,
+                touched: true,
+                valid: true,
+                validator: validators.requiredText
+            },
+            subject: {
+                label: "Subject",
+                type: inputTypes.TEXT,
+                value: student.subject,
+                touched: true,
+                valid: true,
+                validator: validators.requiredText
+            },
+            hourly_rate: {
+                label: "Hourly Rate",
+                type: inputTypes.NUMBER,
+                value: Number(student.hourly_rate.substring(1)),
+                touched: true,
+                valid: true,
+                validator: validators.combineAnd(validators.requiredNumber, validators.minValue(0)),
+                filter: filters.filterNumber
+            }
+        };
+        this.setState({updateStudentForm : newUpdateStudentForm});
+    };
+
+    removeUpdateStudentForm = studentId => {
+        const newUpdateStudentForm = {
+            ...this.state.updateStudentForm
+        };
+        delete newUpdateStudentForm[studentId];
+        this.setState({updateStudentForm: newUpdateStudentForm});
+    };
+
+    updateEditForm = (event, key, studentId) => {
+        const updatedEditForms = {
+            ...this.state.updateStudentForm
+        };
+        const newValues = forms.updateForm(event, key, updatedEditForms[studentId]);
+        updatedEditForms[studentId] = newValues.form;
+        this.setState({updateStudentForm: updatedEditForms});
+    };
+
     render() {
         const buildStudentsTable = () => {
             const buildHeader = () => {
@@ -98,21 +151,119 @@ class Students extends Component {
                         <th>Hourly Rate</th>
                         <th>Created</th>
                         <th>Last Updated</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                 );
             };
             const buildBody = () => {
-                const students = this.state.students.map(student => (
-                    <tr key={student.id}>
-                        <td>{student.id}</td>
-                        <td>{student.name}</td>
-                        <td>{student.subject}</td>
-                        <td>{student.hourly_rate}</td>
-                        <td>{student.createdAt}</td>
-                        <td>{student.updatedAt}</td>
-                    </tr>
-                ));
+                const buildRow = student => {
+                    const buildPlainRow = () => {
+                        const buildEditButton = () => {
+                            return (
+                                <Button
+                                    type={"button"}
+                                    variant={"warning"}
+                                    onClick={event => this.addUpdateStudentForm(student)}>
+                                    <FontAwesomeIcon icon={faEdit}/>
+                                </Button>
+                            );
+                        };
+                        return (
+                            <tr key={student.id}>
+                                <td>{student.id}</td>
+                                <td>{student.name}</td>
+                                <td>{student.subject}</td>
+                                <td>{student.hourly_rate}</td>
+                                <td>{student.createdAt}</td>
+                                <td>{student.updatedAt}</td>
+                                <td>{buildEditButton()}</td>
+                            </tr>
+                        )
+                    };
+                    const buildEditRow = () => {
+                        const form = this.state.updateStudentForm[student.id];
+                        const buildCancelButton = () => {
+                            return (
+                                <Button
+                                    type={"button"}
+                                    variant={"warning"}
+                                    onClick={event => this.removeUpdateStudentForm(student.id)}>
+                                    <FontAwesomeIcon icon={faWindowClose}/>
+                                </Button>
+                            );
+                        };
+                        const buildSaveButton = () => {
+                            return (
+                                <Button
+                                    type={"button"}
+                                    variant={"success"}
+                                    className={"ml-sm-2"}>
+                                    <FontAwesomeIcon icon={faSave}/>
+                                </Button>
+                            );
+                        };
+                        const buildNameInput = () => {
+                            return (
+                                <InputElement
+                                    label={form.name.label}
+                                    type={form.name.type}
+                                    value={form.name.value}
+                                    touched={form.name.touched}
+                                    valid={form.name.valid}
+                                    removeLabel
+                                    onChange={event => this.updateEditForm(event, 'name', student.id)}/>
+                            );
+                        };
+                        const buildSubjectInput = () => {
+                            return (
+                                <InputElement
+                                    label={form.subject.label}
+                                    type={form.subject.type}
+                                    value={form.subject.value}
+                                    touched={form.subject.touched}
+                                    valid={form.subject.valid}
+                                    removeLabel
+                                    onChange={event => this.updateEditForm(event, 'subject', student.id)}/>
+                            );
+                        };
+                        const buildHourlyRateInput = () => {
+                            return (
+                                <Form.Group>
+                                    <InputGroup>
+                                        <InputGroup.Prepend>
+                                            <InputGroup.Text>
+                                                <FontAwesomeIcon icon={faDollarSign}/>
+                                            </InputGroup.Text>
+                                        </InputGroup.Prepend>
+                                        <Form.Control
+                                            type={"number"}
+                                            value={form.hourly_rate.value}
+                                            isValid={form.hourly_rate.valid}
+                                            isInvalid={form.hourly_rate.touched && !form.hourly_rate.valid}
+                                            onChange={event => this.updateEditForm(event, 'hourly_rate', student.id)}/>
+                                        <InputGroup.Append>
+                                            <InputGroup.Text>/hr</InputGroup.Text>
+                                        </InputGroup.Append>
+                                    </InputGroup>
+                                </Form.Group>
+                            );
+                        };
+                        return (
+                            <tr key={student.id}>
+                                <td>{student.id}</td>
+                                <td>{buildNameInput()}</td>
+                                <td>{buildSubjectInput()}</td>
+                                <td>{buildHourlyRateInput()}</td>
+                                <td>{student.createdAt}</td>
+                                <td>{student.updatedAt}</td>
+                                <td>{buildCancelButton()}{buildSaveButton()}</td>
+                            </tr>
+                        );
+                    };
+                    return this.state.updateStudentForm[student.id] ? buildEditRow() : buildPlainRow();
+                };
+                const students = this.state.students.map(buildRow);
                 return (
                     <tbody>
                     {students}

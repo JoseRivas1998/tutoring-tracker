@@ -75,7 +75,7 @@ const inputElement = props => {
     }
     return (
         <Form.Group>
-            <Form.Label>{props.label}</Form.Label>
+            {props.removeLabel ? null : <Form.Label>{props.label}</Form.Label>}
             {formElement}
         </Form.Group>
     );
@@ -88,7 +88,8 @@ inputElement.propTypes = {
     touched: PropTypes.bool.isRequired,
     valid: PropTypes.bool.isRequired,
     onChange: PropTypes.func.isRequired,
-    options: PropTypes.array
+    options: PropTypes.array,
+    removeLabel: PropTypes.bool
 };
 
 export default inputElement;
