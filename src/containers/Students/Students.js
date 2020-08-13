@@ -4,7 +4,7 @@ import axios from 'axios';
 import moment from 'moment';
 import {Helmet} from 'react-helmet';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faDollarSign, faEdit, faWindowClose, faSave} from '@fortawesome/free-solid-svg-icons';
+import {faDollarSign, faEdit, faWindowClose, faSave, faTrash} from '@fortawesome/free-solid-svg-icons';
 
 import InputElement from '../../components/InputElement/InputElement';
 import {DATE_FORMAT} from '../../utils/dateutils';
@@ -64,7 +64,7 @@ class Students extends Component {
             createdAt: moment(student.createdAt).format(DATE_FORMAT),
             updatedAt: moment(student.updatedAt).format(DATE_FORMAT)
         }));
-        this.setState({students: students});
+        this.setState({students: students, updateStudentForm: {}});
     };
 
     onFormInputUpdate = (event, key) => {
@@ -139,6 +139,25 @@ class Students extends Component {
         this.setState({updateStudentForm: updatedEditForms});
     };
 
+    submitEditForm = async studentId => {
+        const editForm = this.state.updateStudentForm[studentId];
+        if (!editForm) return;
+        if (!(editForm.name.valid && editForm.subject.valid && editForm.hourly_rate.valid)) return;
+        const updatedStudent = {
+            id: studentId,
+            name: editForm.name.value,
+            subject: editForm.subject.value,
+            hourly_rate: editForm.hourly_rate.value
+        };
+        await axios.put('http://localhost:3001/students/', updatedStudent);
+        this.loadStudents();
+    };
+
+    deleteStudent = async studentId => {
+        await axios.delete(`http://localhost:3001/students/${studentId}`);
+        this.loadStudents();
+    };
+
     render() {
         const buildStudentsTable = () => {
             const buildHeader = () => {
@@ -169,6 +188,17 @@ class Students extends Component {
                                 </Button>
                             );
                         };
+                        const buildDeleteButton = () => {
+                            return (
+                                <Button
+                                    type={"button"}
+                                    variant={"danger"}
+                                    onClick={event => this.deleteStudent(student.id)}
+                                    className={"ml-sm-2"}>
+                                    <FontAwesomeIcon icon={faTrash}/>
+                                </Button>
+                            );
+                        };
                         return (
                             <tr key={student.id}>
                                 <td>{student.id}</td>
@@ -177,7 +207,7 @@ class Students extends Component {
                                 <td>{student.hourly_rate}</td>
                                 <td>{student.createdAt}</td>
                                 <td>{student.updatedAt}</td>
-                                <td>{buildEditButton()}</td>
+                                <td>{buildEditButton()}{buildDeleteButton()}</td>
                             </tr>
                         )
                     };
@@ -198,6 +228,7 @@ class Students extends Component {
                                 <Button
                                     type={"button"}
                                     variant={"success"}
+                                    onClick={event => this.submitEditForm(student.id)}
                                     className={"ml-sm-2"}>
                                     <FontAwesomeIcon icon={faSave}/>
                                 </Button>

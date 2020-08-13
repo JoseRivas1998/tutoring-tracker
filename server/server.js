@@ -28,6 +28,26 @@ const open = onListen => {
         }
     });
 
+    app.put('/students/', async (req, res) => {
+        try {
+            await core.updateStudent(req.body);
+            res.status(204).send({});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send(err);
+        }
+    });
+
+    app.delete('/students/:id', async (req, res) => {
+        try {
+            await core.deleteStudent(Number(req.params.id));
+            res.status(204).send({});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send(err);
+        }
+    });
+
     app.get('/sessions/', async (req, res) => {
         if (!req.query || !('requested' in req.query)) {
             res.status(400).send({message: 'Required query parameter \'requested\' (bool) missing.'});

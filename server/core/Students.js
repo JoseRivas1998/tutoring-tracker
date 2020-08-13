@@ -11,7 +11,36 @@ const addStudent = async (name, subject, hourly_rate) => {
     await data.Student.create(student);
 };
 
+const updateStudent = async (student) => {
+    const data = await openDb();
+    await data.Student.update(
+        {
+            name: student.name,
+            subject: student.subject,
+            hourly_rate: student.hourly_rate
+        },
+        {
+            where: {
+                id: student.id
+            }
+        }
+    );
+};
+
+const deleteStudent = async studentId => {
+    const data = await openDb();
+    await data.Student.destroy(
+        {
+            where: {
+                id: studentId
+            }
+        }
+    );
+};
+
 module.exports = {
     loadStudents,
-    addStudent
+    addStudent,
+    updateStudent,
+    deleteStudent
 };
