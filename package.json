@@ -58,7 +58,7 @@
     ]
   },
   "devDependencies": {
-    "electron": "^9.1.2",
+    "electron": "^11.5.0",
     "electron-builder": "^22.8.0",
     "wait-on": "^5.1.0"
   },
